@@ -9,6 +9,8 @@
    Comment:     new
    Author/Date: F. Haunstetter / 10.11.2013
    Comment:     Supports project as of Nov 10, 2013.
+   Author/Date: F. Haunstetter / 17.11.2013
+   Comment:     Adaptations to sources and constants cleanup.
    *********************************************
 */
 
@@ -24,13 +26,8 @@
 /* global types */
 enum color {RED, GREEN, BLUE, COLORS, PINC=1};			// pixel memory implementation layout
 enum strip {LOWER, UPPER, STRIPS, SI=1};
-enum line {L1, L2, L3, L4, L5, L6, L7, L8, LINES, LINC=1};
-enum column {LEFT,
-	C01=LEFT, C02, C03, C04, C05, C06, C07, C08, C09,
-	C10, C11, C12, C13, C14, C15, C16, C17, C18, C19,
-	C20, C21, C22, C23, C24, C25, C26, C27, C28, C29,
-	C30, C31, C32,
-	RIGHT=C32, COLUMNS, CINC=1};
+enum line {TOP, L1=TOP, LINES=16, LINC=1};
+enum column {LEFT, C1=LEFT, COLUMNS=32, CINC=1};
 
 // frame buffer type:
 // - each element contains 1 double pixel
@@ -42,7 +39,7 @@ typedef uint8_t buffer_t[LINES][COLUMNS];
 #define MASK(n, s)	((BIT(n) - 1) << s)
 
 // dynamic system constants; frame update rate should be above 60 Hz
-#define FREQ        (70*LINES*SHADES)
+#define FREQ        (60*LINES*SHADES)
 
 // picture attribute constants
 #define SHADES      16

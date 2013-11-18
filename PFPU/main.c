@@ -14,6 +14,8 @@
    Author/Date: F. Haunstetter / 10.11.2013
 	 Comment:     Reduced overhead, prepared for animations.
 	              Project doesn't implement animations yet.
+   Author/Date: F. Haunstetter / 17.11.2013
+	 Comment:     Added tests for animations.
    *********************************************
    A 'main' programm file consists just of the project's only main routine.
    *********************************************
@@ -26,6 +28,8 @@
 void Electric(void);
 void Colors(void);
 void AniDimm(void);
+void Bavaria(void);
+void Centrifuge(void);
 
 /* private function prototypes */
 void setupMCO(void);
@@ -43,15 +47,17 @@ struct tf {
 	void (*fu) (void);				// pointer to function to invoke
 	uint32_t repeat;					// if >0: number of ticks between adjacent runs
 	uint32_t run_once;				// if >0: number of ticks from beginning, to run one or first time
-	uint32_t timetick;				// timer tick counter
+	uint32_t timetick;				// timer tick counter (initially always set to zero)
 };
 void test( struct tf* p_tf );
 
-static struct tf erase = {&clr_Ada32,    0,  9000, 0};
-static struct tf fu1 =   {&AniDimm,   1000, 10000, 0};
-static struct tf fu21 =  {&Colors,   10000,  1000, 0};
-static struct tf fu22 =  {&Colors,   10000,  4000, 0};
-static struct tf fu3 =   {&Electric, 10000,  7000, 0};
+static struct tf erase = {&clr_Ada32,     0,  9000, 0};
+static struct tf fu1 =   {&AniDimm,     500,   500, 0};
+static struct tf fu21 =  {&Colors,    20000, 10000, 0};
+static struct tf fu22 =  {&Colors,    20000, 15000, 0};
+static struct tf fu3 =   {&Electric,  20000,     1, 0};
+static struct tf fu4 =   {&Bavaria,      10,     1, 0};
+static struct tf fu5 =   {&Centrifuge,    7,     1, 0};
 /* END TEST AND DEBUG */
 
 /* *********************************************
@@ -95,9 +101,12 @@ int main()
 	 *********************************************/
 void SysTick_Handler()
 {
-	test( &fu21 );
-	test( &fu22 );
-	test( &fu3 );
+//	test( &fu1 );
+//	test( &fu21 );
+//	test( &fu22 );
+//	test( &fu3 );
+//	test( &fu4 );
+	test( &fu5 );
 	
 	GPIOD->ODR ^= BIT(14);
 }
@@ -124,6 +133,7 @@ void Electric()
 		point( x, y, col[2] );
 	}
 }
+
 
 /* *********************************************
 		DEMO: Colors
@@ -164,27 +174,67 @@ void Colors()
 void AniDimm()
 {
 	enum {X0=11, Y0=3, EDGE=10, RED_SH=16, GREEN_SH=8, BLUE_SH=0};
-	int x;
-	int y;
-	int c;
-	static int bright = 1;
-	static int add = 1;
+	int x, y, m;
+	static int n = 1;
 
-	for (y = Y0; y < (Y0+EDGE); y++)
+	for (y = Y0, m = 1; y < (Y0+EDGE); y++, m++)
 	{
-		c = bright<<RED_SH | bright<<GREEN_SH;
+		if (m <= n)
 		for (x = X0; x < (X0+EDGE); x++)
-			point( x, y, c );
-		
-		bright += add;
-		if (bright == EDGE | bright == 0)
-		{
-			add = -add;
-			bright += add;
-		}
+			point( x, y, 1<<RED_SH | 1<<GREEN_SH );
+	}
+	n++;
+	if (n > EDGE)
+	{
+		n = 1;
+		clr_Ada32();
 	}
 }
 
+
+/* *********************************************
+		DEMO: Flashing blue
+	 *********************************************/
+void Bavaria()
+{
+	static uint32_t c = 1;
+	static int add = 1;
+	
+	bck_Ada32( c );																	// paint a background
+	
+	c += add;
+	if (c == 16 || c == 0)
+	{
+		add = -add;
+		c += 2*add;
+	}
+}
+
+
+/* *********************************************
+		DEMO: Rotation
+	 *********************************************/
+void Centrifuge()
+{
+	#define PI 3.14157
+	#define N  60
+	enum {RED_SH=16, GREEN_SH=8, BLUE_SH=0};
+
+	static double phi = 0;
+	double x = 0, y = 0;
+	
+//	bck_Ada32( 0x00010001 );												// paint a background
+	clr_Ada32();												// paint a background
+	
+	point( (uint32_t)(x+.5), (uint32_t)(y+.5), 0 );
+	x = ((COLUMNS-1) + (LINES-1)*cos(phi))/2.0;
+	y = (LINES-1)/2.0*(1.0 - sin(phi));
+	point( (uint32_t)(x+.5), (uint32_t)(y+.5), 1<<GREEN_SH );
+	
+	phi = phi + 2*PI/N;
+	if (phi > 2*PI)
+		phi = 0;
+}
 
 /* *** Generic Utiliy Routines *****************/
 
